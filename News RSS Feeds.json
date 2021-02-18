@@ -1,0 +1,28 @@
+{
+    "news": [
+        {"rss": "https://www.abc.net.au/news/feed/4575274/rss.xml"},
+		{"rss": "https://www.abc.net.au/news/feed/51120/rss.xml"},
+		{"rss": "https://www.theage.com.au/rss/feed.xml"},
+		{"rss": "https://www.theage.com.au/rss/technology.xml"},
+		{"rss": "https://www.theguardian.com.au/feed/rss"}
+        ],
+	"topics": [
+		{"keyword": "valentino rossi"},
+		{"keyword": "flying doctor"},
+		{"keyword": "rfds"},
+		{"keyword": "patients"},
+		{"keyword": "privacy act"}
+		],
+	"ignore": [
+		{"keyword": "covid"},
+		{"keyword": "trump"},
+		{"keyword": "lockdown"},
+		{"keyword": "coronavirus"},
+		{"keyword": "prince"},
+		{"keyword": "novak"},
+		{"keyword": "tennis"},
+		{"keyword": "nrl"},
+		{"keyword": "afl"},
+		{"keyword": "quarantine"}
+		]
+}
