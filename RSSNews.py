@@ -7,7 +7,15 @@
     Shane Frost
     20210218 From the original Aug 2020 version
 
+    CHANGELOG
+    -----------
+    20210219
+        Changed the method for organising / sorting stories.
+        Changed some div tags for the css.
+        Added news organisation as suffix to story
+    
     TODO
+    -----------
     download the content and display it in my own format so that we don't have cookies everywhere.
 
 '''
@@ -41,34 +49,27 @@ def ConvertDateTime(inputDateTimeString):
         if(inputDateTimeString[8:11].lower() == monthAbbreviation):
             returnDateTimeString += ('00' + str(monthNameAbbreviations.index(monthAbbreviation)+1))[-2:] + '-'
     returnDateTimeString += ('00' + inputDateTimeString[5:7])[-2:] + ' ' # DAY
-    returnDateTimeString += inputDateTimeString[17:25] #+ '.000000' # hh:mm:ss
+    returnDateTimeString += inputDateTimeString[17:25] # hh:mm:ss
     return returnDateTimeString
 
 def DatetimeDifferenceInHours(publishedDate):
-    #print(publishedDate)
     format = "%Y-%m-%d %H:%M:%S"
     dt_object = datetime.datetime.strptime(publishedDate, format) # Convert string to datetime
     DateTimeDifference = str(datetime.datetime.now() - dt_object) # get the difference between the two
-    #print('def ' + DateTimeDifference)
 
     try:
         if str(DateTimeDifference).find('day') != -1: # Current day, nothing to find.
-            #print('Stage 1 OK')
             if str(DateTimeDifference).find('day,') == -1:
-                #DateTimeDifferenceHours = 0
                 try:
                     DateTimeDifferenceHours = int(DateTimeDifference[:DateTimeDifference.find(',')].replace(' days',''))*24 #Days difference in hours
-                    #print(publishedDate + ' - ' + DateTimeDifference + ' 0/1')
                 except:
                     print('Error with ' + publishedDate + ' | DateTimeDifference is ' + DateTimeDifference)
             else:
                 if str(DateTimeDifference).find('-1 day,') == 0:
                     DateTimeDifferenceHours = 0
-                    #print(publishedDate + ' - ' + DateTimeDifference + ' 0/2')
                 else:
                     DateTimeDifferenceHours = int(DateTimeDifference[:DateTimeDifference.find(',')].replace(' days','').replace(' day',''))*24 #Days difference in hours
                     DateTimeDifferenceHours += int(DateTimeDifference[DateTimeDifference.find(', ')+2:DateTimeDifference.find(':')]) # add the balance of the hours
-                    #print(publishedDate + ' - ' + DateTimeDifference + ' 3')
         else:
             DateTimeDifferenceHours = int(DateTimeDifference[:DateTimeDifference.find(':')]) # add the hours
         return DateTimeDifferenceHours
@@ -79,6 +80,7 @@ def DatetimeDifferenceInHours(publishedDate):
 
 monthNameAbbreviations = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
 NewsStories = []
+FeaturedNewsStories = []
 
 #cls() # Clear the IDLE screen (mainly for debugging you know)
 RSSData = GetRSSDataFromJSONfile()
@@ -98,27 +100,35 @@ for RSSfeed in str(RSSData['news']).split(','):
         for ignore in str(RSSData['ignore']).split(','): 
             if entry['title'].lower().find(CleanJSONText(ignore)) != -1:
                 keeper = False
+                
         for topicRank in str(RSSData['topics']).split(','):
             if entry['title'].lower().find(CleanJSONText(topicRank)) != -1:
-                relevance += 1
+                NewsItem.append(entry['published'])
+                Agency = CleanJSONText(RSSfeed)
+                NewsItem.append(Agency[Agency.find('www.')+4:Agency.find('/',Agency.find('www.')+4)])
+                NewsItem.append(relevance)
+                NewsItem.append(DatetimeDifferenceInHours(ConvertDateTime(entry['published'])))
+                NewsItem.append(entry['title'])
+                NewsItem.append(entry['link'])                
+                FeaturedNewsStories.append(NewsItem)
+                keeper = False
         
         if keeper == True:
-            #print(str(DatetimeDifferenceInHours(ConvertDateTime(entry['published']))))
             if DatetimeDifferenceInHours(ConvertDateTime(entry['published'])) is None:
                 DatetimeDifferenceInHours = 0
             else:
-                if DatetimeDifferenceInHours(ConvertDateTime(entry['published'])) < 72:
-                    #print(ConvertDateTime(entry['published']))
+                if DatetimeDifferenceInHours(ConvertDateTime(entry['published'])) < 24:
+                    NewsItem.append(entry['published'])
                     Agency = CleanJSONText(RSSfeed)
                     NewsItem.append(Agency[Agency.find('www.')+4:Agency.find('/',Agency.find('www.')+4)])
                     NewsItem.append(relevance)
                     NewsItem.append(DatetimeDifferenceInHours(ConvertDateTime(entry['published'])))
-                    NewsItem.append(entry['published'])
                     NewsItem.append(entry['title'])
                     NewsItem.append(entry['link'])
-                    #NewsItem.append()
-                    
                     NewsStories.append(NewsItem)
+
+SortedNewsStories = sorted(NewsStories)
+SortedFeaturedNewsStories = sorted(FeaturedNewsStories)
 
 ######################################################
 # Output to csv file
@@ -128,6 +138,7 @@ wtr = csv.writer(open('news.csv', 'w'), delimiter=',', lineterminator='\n')
 wtr.writerow(csvHeadings)
 for NewsItem in NewsStories:
     wtr.writerow(NewsItem)
+
 
 ######################################################
 # Create HTML
@@ -146,30 +157,23 @@ with doc:
         attr(cls='w3-text-grey')
         a('Updated: ' + str(datetime.datetime.now())[:16])
         
-    # Test for articles of interest.
-    articleCount = 0
-    for NewsItem in NewsStories: 
-        if NewsItem[1] > 0:
-            articleCount += 1
-
     # Only create the 'Articles of Interest' section if there's something to show
-    if articleCount > 0: 
-            with div(id='header').add(ul()):
-                with div():
-                    attr(cls='w3-panel w3-round-large w3-red')
-                    p("Articles of Interest")
-                for NewsItem in NewsStories: # Test for articles of interest.
-                    if NewsItem[1] > 0:
-                        li(a(NewsItem[4], href=NewsItem[5]))
+    if len(FeaturedNewsStories) > 0: 
+        with div(id='header').add(ul()):
+            with div():
+                attr(cls='w3-panel w3-round-large w3-red')
+                p("Articles of Interest")
+            for NewsItem in SortedFeaturedNewsStories: # Test for articles of interest.
+                li(a(NewsItem[4], href=NewsItem[5]) ,  ' (' + str(NewsItem[1]) , ')' )
 
     # Now add the ordinary articles.
     with div(id='header').add(ul()): 
         with div():
             attr(cls='w3-panel w3-round-large w3-blue')
             p("Rest of the news")        
-        for NewsItem in NewsStories:
-            if NewsItem[1] == 0:
-                li(a(NewsItem[4], href=NewsItem[5]))
+        for NewsItem in SortedNewsStories:
+            #if NewsItem[1] == 0:
+            li(a(NewsItem[4], href=NewsItem[5]) ,  ' (' + str(NewsItem[1]) , ')' )
             
     with div():
         attr(cls='w3-text-blue')
@@ -178,6 +182,20 @@ with doc:
 with open('gaggle news.html', 'w') as f:
     for line in doc:
         f.write(str(line))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
