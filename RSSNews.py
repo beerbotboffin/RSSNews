@@ -1,6 +1,6 @@
 '''
     RSS News Reader 2.0
-    Get the news that's (hoopefully) worth reading!
+    Get the news that's (hopefully) worth reading!
     Version 2.0 presents the links in a (hopefully) better way
     Go on, Google - leave the Australian news market. I dare you!
 
@@ -9,10 +9,13 @@
 
     CHANGELOG
     -----------
-    20210219
+    20210219 v2.0
         Changed the method for organising / sorting stories.
         Changed some div tags for the css.
         Added news organisation as suffix to story
+    20210220
+        Added page icon
+    
     
     TODO
     -----------
@@ -85,6 +88,15 @@ FeaturedNewsStories = []
 #cls() # Clear the IDLE screen (mainly for debugging you know)
 RSSData = GetRSSDataFromJSONfile()
 
+NewsFeed = feedparser.parse("https://www.abc.net.au/news/feed/4575274/rss.xml")
+
+##print(NewsFeed)
+
+##for i in NewsFeed:
+##    print(i[1])
+
+
+
 # Process each of the news sources
 for RSSfeed in str(RSSData['news']).split(','):
     NewsFeed = feedparser.parse(CleanJSONText(RSSfeed))
@@ -96,9 +108,9 @@ for RSSfeed in str(RSSData['news']).split(','):
         keeper = True
         relevance = 0
         
-        # Remove any article which have keywords we don't want.
+        # Remove any article which contain keywords we don't want.
         for ignore in str(RSSData['ignore']).split(','): 
-            if entry['title'].lower().find(CleanJSONText(ignore)) != -1:
+            if entry['title'].lower().find(CleanJSONText(ignore.lower())) != -1:
                 keeper = False
                 
         for topicRank in str(RSSData['topics']).split(','):
@@ -127,33 +139,36 @@ for RSSfeed in str(RSSData['news']).split(','):
                     NewsItem.append(entry['link'])
                     NewsStories.append(NewsItem)
 
+
+# Sort the articles chronologically
 SortedNewsStories = sorted(NewsStories)
 SortedFeaturedNewsStories = sorted(FeaturedNewsStories)
 
 ######################################################
 # Output to csv file
 ######################################################
-csvHeadings = ['News Agency','relevance','hours since published','publish date','title','url']
-wtr = csv.writer(open('news.csv', 'w'), delimiter=',', lineterminator='\n')
-wtr.writerow(csvHeadings)
-for NewsItem in NewsStories:
-    wtr.writerow(NewsItem)
+##csvHeadings = ['publish date','News Agency','relevance','hours since published','title','url']
+##wtr = csv.writer(open('news.csv', 'w'), delimiter=',', lineterminator='\n')
+##wtr.writerow(csvHeadings)
+##for NewsItem in SortedNewsStories:
+##    wtr.writerow(NewsItem)
 
 
 ######################################################
 # Create HTML
 ######################################################
-doc = dominate.document(title='Gag-gle News')
+doc = dominate.document(title='Gaggle News')
 
 with doc.head:
     link(rel='stylesheet', href='https://www.w3schools.com/w3css/4/w3.css')
+    link(rel='icon', href='icon.png')
     script(type='text/javascript', src='script.js')
 
 with doc:
     # Add the logo
     with div():
         attr(cls='body')
-        img(src="logo.png")
+        img(src='logo.png')
         attr(cls='w3-text-grey')
         a('Updated: ' + str(datetime.datetime.now())[:16])
         
@@ -179,9 +194,12 @@ with doc:
         attr(cls='w3-text-blue')
         p("You don't need google for news.")
 
-with open('gaggle news.html', 'w') as f:
+with open('gaggle news.html', 'w', encoding="utf-8") as f:
     for line in doc:
-        f.write(str(line))
+        try:
+            f.write(str(line))
+        except:
+            f.write('error' )
 
 
 
