@@ -88,15 +88,6 @@ FeaturedNewsStories = []
 #cls() # Clear the IDLE screen (mainly for debugging you know)
 RSSData = GetRSSDataFromJSONfile()
 
-NewsFeed = feedparser.parse("https://www.abc.net.au/news/feed/4575274/rss.xml")
-
-##print(NewsFeed)
-
-##for i in NewsFeed:
-##    print(i[1])
-
-
-
 # Process each of the news sources
 for RSSfeed in str(RSSData['news']).split(','):
     NewsFeed = feedparser.parse(CleanJSONText(RSSfeed))
@@ -115,15 +106,16 @@ for RSSfeed in str(RSSData['news']).split(','):
                 
         for topicRank in str(RSSData['topics']).split(','):
             if entry['title'].lower().find(CleanJSONText(topicRank)) != -1:
-                NewsItem.append(entry['published'])
-                Agency = CleanJSONText(RSSfeed)
-                NewsItem.append(Agency[Agency.find('www.')+4:Agency.find('/',Agency.find('www.')+4)])
-                NewsItem.append(relevance)
-                NewsItem.append(DatetimeDifferenceInHours(ConvertDateTime(entry['published'])))
-                NewsItem.append(entry['title'])
-                NewsItem.append(entry['link'])                
-                FeaturedNewsStories.append(NewsItem)
-                keeper = False
+                if DatetimeDifferenceInHours(ConvertDateTime(entry['published'])) < 24:
+                    NewsItem.append(entry['published'])
+                    Agency = CleanJSONText(RSSfeed)
+                    NewsItem.append(Agency[Agency.find('www.')+4:Agency.find('/',Agency.find('www.')+4)])
+                    NewsItem.append(relevance)
+                    NewsItem.append(DatetimeDifferenceInHours(ConvertDateTime(entry['published'])))
+                    NewsItem.append(entry['title'])
+                    NewsItem.append(entry['link'])                
+                    FeaturedNewsStories.append(NewsItem)
+                    keeper = False
         
         if keeper == True:
             if DatetimeDifferenceInHours(ConvertDateTime(entry['published'])) is None:
@@ -141,8 +133,8 @@ for RSSfeed in str(RSSData['news']).split(','):
 
 
 # Sort the articles chronologically
-SortedNewsStories = sorted(NewsStories)
-SortedFeaturedNewsStories = sorted(FeaturedNewsStories)
+SortedNewsStories = sorted(NewsStories, reverse=True)
+SortedFeaturedNewsStories = sorted(FeaturedNewsStories, reverse=True)
 
 ######################################################
 # Output to csv file
@@ -197,13 +189,14 @@ with doc:
 with open('gaggle news.html', 'w', encoding="utf-8") as f:
     for line in doc:
         try:
-            f.write(str(line))
+            f.write(str(line).replace('&#039;',"'"))
         except:
             f.write('error' )
+            continue
 
 
 
-
+#.replace("&#039;","'")
 
 
 
