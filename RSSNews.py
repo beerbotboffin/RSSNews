@@ -180,7 +180,7 @@ with doc:
             p("Rest of the news")        
         for NewsItem in SortedNewsStories:
             #if NewsItem[1] == 0:
-            li(a(NewsItem[4], href=NewsItem[5]) ,  ' (' + str(NewsItem[1]) , ')' )
+            li(a(NewsItem[4], href=NewsItem[5].replace('&amp;','').replace('#039;','\'')) ,  ' (' + str(NewsItem[1]) , ')' )
             
     with div():
         attr(cls='w3-text-blue')
@@ -189,7 +189,7 @@ with doc:
 with open('gaggle news.html', 'w', encoding="utf-8") as f:
     for line in doc:
         try:
-            f.write(str(line).replace('&#039;',"'"))
+            f.write(str(line).replace('&amp;#039;',''''''))
         except:
             f.write('error' )
             continue
